@@ -68,12 +68,15 @@ class RayWorker:
         pl = fp.Placement
         hitname = 'HitsFrom' + fp.Label
         hitcoordsname = 'HitCoordsFrom' + fp.Label
+        hitanglesname = 'HitAnglesFrom' + fp.Label
         for optobj in activeDocument().Objects:
             if isOpticalObject(optobj):
                 if hasattr(optobj, hitname):
                     setattr(optobj, hitname, 0)
                 if hasattr(optobj, hitcoordsname):
                     setattr(optobj, hitcoordsname, [])
+                if hasattr(optobj, hitanglesname):
+                    setattr(optobj, hitanglesname, [])
 
 
         try: #check if the beam has the parameter coneAngle, this is a legacy check.
@@ -280,9 +283,18 @@ class RayWorker:
                 # print("A RAY coming from", fp.Label, "hits the receiver at", tuple(neworigin))
                 hitcoordsname = 'HitCoordsFrom' + fp.Label
                 if not hasattr(nearest_obj, hitcoordsname):
+                    # Property of abosrber add list of hit coordinates
                     nearest_obj.addProperty('App::PropertyVectorList',  hitcoordsname,   'OpticalObject',   'Hit coordinates from ' + fp.Label + ' (read only)')
                     setattr(nearest_obj, hitcoordsname, [])
                 setattr(nearest_obj, hitcoordsname, getattr(nearest_obj, hitcoordsname) + [neworigin,] )
+
+                hitanglesname = 'HitAnglesFrom' + fp.Label
+                if not hasattr(nearest_obj, hitanglesname):
+                    # Property of absorber add list of hit angle vectors
+                    nearest_obj.addProperty('App::PropertyVectorList',  hitanglesname,   'OpticalObject',   'Hit angles from ' + fp.Label + ' (read only)')
+                    setattr(nearest_obj, hitanglesname, [])    
+                # print(neworigin, origin)
+                setattr(nearest_obj, hitanglesname, getattr(nearest_obj, hitanglesname) + [neworigin-origin,] )
 
             if fp.HideFirstPart == False or first == False:
                 linearray[len(linearray) - 1] = shortline
@@ -727,6 +739,56 @@ class AllOff():
                 'Accel' : '', # a default shortcut (optional)
                 'MenuText': 'Switch off lights',
                 'ToolTip' : 'Switch off all rays and beams' }
+    
+class PlotCoords():
+    '''This class will be loaded when the workbench is activated in FreeCAD. You must restart FreeCAD to apply changes in this class'''
+
+    def Activated(self):
+        '''Will be called when the feature is executed.'''
+        # Generate commands in the FreeCAD python console to create Ray
+        Gui.doCommand('import OpticsWorkbench')
+        Gui.doCommand('OpticsWorkbench.plot_hist(App.ActiveDocument.Absorber)')
+
+
+    def IsActive(self):
+        '''Here you can define if the command must be active or not (greyed) if certain conditions
+        are met or not. This function is optional.'''
+        if activeDocument():
+            return(True)
+        else:
+            return(False)
+
+    def GetResources(self):
+        '''Return the icon which will appear in the tree view. This method is optional and if not defined a default icon is shown.'''
+        return {'Pixmap'  : os.path.join(_icondir_, 'plot_coords.svg'),
+                'Accel' : '', # a default shortcut (optional)
+                'MenuText': 'Plot XY histogram of rays',
+                'ToolTip' : 'Plot XY histogram of rays on App.ActiveDocument.Absorber' }
+
+class PlotAngles():
+    '''This class will be loaded when the workbench is activated in FreeCAD. You must restart FreeCAD to apply changes in this class'''
+
+    def Activated(self):
+        '''Will be called when the feature is executed.'''
+        # Generate commands in the FreeCAD python console to create Ray
+        Gui.doCommand('import OpticsWorkbench')
+        Gui.doCommand('OpticsWorkbench.plot_hist_angles(App.ActiveDocument.Absorber)')
+
+
+    def IsActive(self):
+        '''Here you can define if the command must be active or not (greyed) if certain conditions
+        are met or not. This function is optional.'''
+        if activeDocument():
+            return(True)
+        else:
+            return(False)
+
+    def GetResources(self):
+        '''Return the icon which will appear in the tree view. This method is optional and if not defined a default icon is shown.'''
+        return {'Pixmap'  : os.path.join(_icondir_, 'plot_angles.svg'),
+                'Accel' : '', # a default shortcut (optional)
+                'MenuText': 'Plot Angles Histogram',
+                'ToolTip' : 'Plot Angles histogram of rays on App.ActiveDocument.Absorber' }
 
 Gui.addCommand('Ray (monochrome)', Ray())
 Gui.addCommand('Ray (sun light)', RaySun())
@@ -735,3 +797,5 @@ Gui.addCommand('2D Radial Beam', RadialBeam2D())
 Gui.addCommand('Spherical Beam', SphericalBeam())
 Gui.addCommand('Start', RedrawAll())
 Gui.addCommand('Off', AllOff())
+Gui.addCommand('Plot', PlotCoords())
+Gui.addCommand('PlotAngles', PlotAngles())

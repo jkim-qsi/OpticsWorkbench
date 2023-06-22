@@ -186,3 +186,63 @@ def plot_xy(absorber):
 
 # def isOpticalObject(obj):
 #     return obj.TypeId == 'Part::FeaturePython' and hasattr(obj, 'OpticalType') and hasattr(obj, 'Base')
+
+def plot_hist(absorber):
+    import numpy as np
+    import matplotlib.pyplot as plt
+    
+    coords = []
+    attr_names = [attr for attr in dir(absorber) if attr.startswith('HitCoordsFrom')]
+    coords_per_beam = [getattr(absorber, attr) for attr in attr_names]
+    all_coords = np.array([coord for coords in coords_per_beam for coord in coords])
+    print("attr_names", attr_names)
+    print("coords_per_beam", coords_per_beam)
+    print("all_coords", all_coords)
+    
+    x = all_coords[:,0]
+    y = all_coords[:,1]
+    # y = all_coords[:,2]       
+    
+    if len(all_coords) > 0:
+        fig, axs = plt.subplots(2, 1)
+        ax = axs[0]
+        ax.hist(x) #, bins=100)
+        ax.set_title('X histogram')
+
+        ax = axs[1]
+        ax.hist(y) #, bins=100)
+        ax.set_title('Y histogram')
+
+        plt.tight_layout()
+        plt.show()
+
+
+def plot_hist_angles(absorber):
+    import numpy as np
+    import matplotlib.pyplot as plt
+    
+    coords = []
+    attr_names = [attr for attr in dir(absorber) if attr.startswith('HitAnglesFrom')]
+    angle_vect_per_beam = [getattr(absorber, attr) for attr in attr_names]
+    all_vects = np.array([coord for coords in angle_vect_per_beam for coord in coords])
+    print("attr_names", attr_names)
+    print("angle_vect_per_beam", angle_vect_per_beam)
+    print("all_vects", all_vects)
+    
+    x = all_vects[:,0]
+    y = all_vects[:,1]
+    Th = np.arctan2(y, x)
+    # y = all_coords[:,2]       
+    
+    if len(Th) > 0:
+        fig, axs = plt.subplots(2, 1)
+        ax = axs[0]
+        ax.hist(Th) #, bins=100)
+        ax.set_title('Ray Theta (rad) histogram')
+
+        ax = axs[1]
+        ax.hist(Th*180/np.pi) #, bins=100)
+        ax.set_title('Ray Theta (deg) histogram')
+
+        plt.tight_layout()
+        plt.show()
